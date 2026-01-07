@@ -1,0 +1,68 @@
+/* App-specific overrides and utilities */
+
+.App {
+  min-height: 100vh;
+}
+
+/* Utility animations */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Additional hover effects */
+.market-item:hover .market-question {
+  color: var(--accent-secondary);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 1rem;
+  }
+  
+  .app-title {
+    font-size: 1.75rem;
+  }
+  
+  .app-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .stats-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .market-outcomes-preview {
+    flex-wrap: wrap;
+  }
+  
+  .card-content {
+    max-height: 60vh;
+  }
+  
+  .stats-panel {
+    position: static;
+  }
+}
+
+/* Smooth transitions for interactive elements */
+* {
+  transition-property: background-color, border-color, color, box-shadow, transform;
+  transition-duration: 0.15s;
+  transition-timing-function: ease-out;
+}
+
+/* Focus states for accessibility */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--accent-primary);
+  color: white;
+}
