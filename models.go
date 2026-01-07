@@ -18,17 +18,32 @@ type Market struct {
 
 // GammaMarket is the raw response from Gamma API (maps directly to their schema)
 type GammaMarket struct {
-	ID             string   `json:"id"`
-	ConditionID    string   `json:"conditionId"`
-	Question       string   `json:"question"`
-	Description    string   `json:"description"`
-	Outcomes       string   `json:"outcomes"`       // JSON array as string, need to parse
-	OutcomePrices  string   `json:"outcomePrices"`  // JSON array as string
-	EndDateISO     string   `json:"endDateIso"`
-	Volume         string   `json:"volume"`
-	Liquidity      string   `json:"liquidity"`
-	Active         bool     `json:"active"`
-	Closed         bool     `json:"closed"`
+	ID            string `json:"id"`
+	ConditionID   string `json:"conditionId"`
+	Question      string `json:"question"`
+	Description   string `json:"description"`
+	Outcomes      string `json:"outcomes"`      // JSON array as string, need to parse
+	OutcomePrices string `json:"outcomePrices"` // JSON array as string
+	EndDateISO    string `json:"endDateIso"`
+	Volume        string `json:"volume"`
+	Liquidity     string `json:"liquidity"`
+	Active        bool   `json:"active"`
+	Closed        bool   `json:"closed"`
+}
+
+// GammaEvent represents an event from the search API
+type GammaEvent struct {
+	ID      string        `json:"id"`
+	Title   string        `json:"title"`
+	Slug    string        `json:"slug"`
+	Active  bool          `json:"active"`
+	Closed  bool          `json:"closed"`
+	Markets []GammaMarket `json:"markets"`
+}
+
+// SearchResponse represents the response from /public-search
+type SearchResponse struct {
+	Events []GammaEvent `json:"events"`
 }
 
 // Position represents a user's position on a market outcome

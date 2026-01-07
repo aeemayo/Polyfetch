@@ -36,7 +36,8 @@ func (c *GammaClient) FetchMarkets(limit int, offset int) ([]Market, error) {
 	params.Set("closed", "false")
 	params.Set("limit", fmt.Sprint(limit))
 	params.Set("offset", fmt.Sprint(offset))
-	// params.Set("order", "volume") // Sort by volume desc
+	params.Set("order", "volume") // Sort by volume desc
+	params.Set("ascending", "false")
 
 	reqURL := fmt.Sprintf("%s/markets?%s", c.baseURL, params.Encode())
 	
@@ -62,10 +63,17 @@ func (c *GammaClient) FetchMarkets(limit int, offset int) ([]Market, error) {
 		return nil, fmt.Errorf("failed to parse markets: %w", err)
 	}
 
-	// Convert to our Market type
+	// Convert to our Market type and filter expired
 	markets := make([]Market, 0, len(gammaMarkets))
+	now := time.Now()
 	for _, gm := range gammaMarkets {
 		market := c.convertGammaMarket(gm)
+		
+		// Skip if end date is in the past (allow 24h grace period for resolving markets)
+		if !market.EndDate.IsZero() && market.EndDate.Before(now.AddDate(0, 0, -1)) {
+			continue
+		}
+
 		markets = append(markets, market)
 	}
 
@@ -131,24 +139,31 @@ func (c *GammaClient) convertGammaMarket(gm GammaMarket) Market {
 
 	// Parse end date
 	if gm.EndDateISO != "" {
-		if t, err := time.Parse(time.RFC3339, gm.EndDateISO); err == nil {
-			market.EndDate = t
+		// Try multiple formats
+		formats := []string{
+			time.RFC3339,
+			"2006-01-02",
+			"2006-01-02T15:04:05",
+		}
+		
+		for _, format := range formats {
+			if t, err := time.Parse(format, gm.EndDateISO); err == nil {
+				market.EndDate = t
+				break
+			}
 		}
 	}
 
 	return market
 }
 
-// SearchMarkets searches for markets matching a query
+// SearchMarkets searches for markets matching a query using the public-search endpoint
 func (c *GammaClient) SearchMarkets(query string, limit int) ([]Market, error) {
 	params := url.Values{}
-	params.Set("active", "true")
-	params.Set("closed", "false")
-	params.Set("limit", fmt.Sprint(limit))
 	params.Set("q", query) // Search query parameter
 
-	reqURL := fmt.Sprintf("%s/markets?%s", c.baseURL, params.Encode())
-	
+	reqURL := fmt.Sprintf("%s/public-search?%s", c.baseURL, params.Encode())
+
 	resp, err := c.httpClient.Get(reqURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search markets: %w", err)
@@ -165,15 +180,33 @@ func (c *GammaClient) SearchMarkets(query string, limit int) ([]Market, error) {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	var gammaMarkets []GammaMarket
-	if err := json.Unmarshal(body, &gammaMarkets); err != nil {
-		return nil, fmt.Errorf("failed to parse markets: %w", err)
+	var searchResp SearchResponse
+	if err := json.Unmarshal(body, &searchResp); err != nil {
+		return nil, fmt.Errorf("failed to parse search response: %w", err)
 	}
 
-	markets := make([]Market, 0, len(gammaMarkets))
-	for _, gm := range gammaMarkets {
-		market := c.convertGammaMarket(gm)
-		markets = append(markets, market)
+	// Extract markets from events
+	markets := make([]Market, 0)
+	now := time.Now()
+	for _, event := range searchResp.Events {
+		for _, gm := range event.Markets {
+			// Only include active, non-closed markets
+			if gm.Active && !gm.Closed {
+				market := c.convertGammaMarket(gm)
+				
+				// Skip if end date is in the past
+				if !market.EndDate.IsZero() && market.EndDate.Before(now.AddDate(0, 0, -1)) {
+					continue
+				}
+
+				markets = append(markets, market)
+			}
+		}
+		// Limit results
+		if len(markets) >= limit {
+			markets = markets[:limit]
+			break
+		}
 	}
 
 	return markets, nil

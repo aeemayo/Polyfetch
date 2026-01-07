@@ -296,19 +296,12 @@ function App() {
               <div className="stats-header">
                 <h3 className="stats-question">{stats.question || selectedMarket.question}</h3>
                 <div className="stats-summary">
-                  <div className="stat-box">
-                    <div className="stat-value">
-                      <UsersIcon style={{ marginRight: '0.25rem' }} />
-                      {stats.totalUsers > 0 ? stats.totalUsers.toLocaleString() : 'N/A'}
-                    </div>
-                    <div className="stat-label">Unique Bettors</div>
-                  </div>
-                  <div className="stat-box">
+                  <div className="stat-box" style={{ flex: 1 }}>
                     <div className="stat-value" style={{ color: 'var(--success)' }}>
                       <TrendingIcon style={{ marginRight: '0.25rem' }} />
                       {formatPercentage(stats.popularPct)}
                     </div>
-                    <div className="stat-label">Leading Outcome</div>
+                    <div className="stat-label">Consensus Probability</div>
                   </div>
                 </div>
               </div>
@@ -321,7 +314,7 @@ function App() {
                   textTransform: 'uppercase',
                   letterSpacing: '0.05em'
                 }}>
-                  Outcome Distribution
+                  Outcome Probabilities
                 </h4>
                 
                 {stats.outcomeStats?.map((outcome, idx) => {
@@ -337,7 +330,7 @@ function App() {
                       <div className="outcome-header">
                         <span className="outcome-name">
                           {outcome.outcome}
-                          {isPopular && <span className="popular-badge">Most Popular</span>}
+                          {isPopular && <span className="popular-badge">Consensus Pick</span>}
                         </span>
                         <span className={`outcome-percentage ${pctClass}`}>
                           {formatPercentage(outcome.percentage)}
@@ -351,13 +344,11 @@ function App() {
                       </div>
                       <div className="outcome-details">
                         <span>
-                          {outcome.userCount > 0 
-                            ? `${outcome.userCount.toLocaleString()} bettors` 
-                            : 'Based on price'}
+                           Implied Probability: {formatPercentage(outcome.percentage)}
                         </span>
                         {outcome.price && (
                           <span className="price-tag">
-                            Price: {(parseFloat(outcome.price) * 100).toFixed(0)}¢
+                            Price: {(parseFloat(outcome.price) * 100).toFixed(1)}¢
                           </span>
                         )}
                       </div>

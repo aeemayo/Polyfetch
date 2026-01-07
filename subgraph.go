@@ -158,96 +158,22 @@ func (c *SubgraphClient) GetMarketPositions(marketID string) ([]PositionData, er
 	return allPositions, nil
 }
 
-// ComputeMarketStats calculates user distribution statistics for a market
+// ComputeMarketStats calculates statistics based on market prices (Probability)
+// Since the user positions subgraph is deprecated, we prioritize price/consensus data.
 func (c *SubgraphClient) ComputeMarketStats(market *Market) (*MarketStats, error) {
-	positions, err := c.GetMarketPositions(market.ConditionID)
-	if err != nil {
-		// If subgraph query fails, return mock stats based on prices
-		// This is a fallback when positions aren't available
-		return c.computeStatsFromPrices(market), nil
-	}
-
-	// Map outcome -> set of unique users
-	outcomeUsers := make(map[string]map[string]bool)
-	totalUniqueUsers := make(map[string]bool)
-
-	for _, pos := range positions {
-		outcome := pos.Outcome
-		user := pos.User.ID
-
-		// Initialize map for this outcome if needed
-		if _, ok := outcomeUsers[outcome]; !ok {
-			outcomeUsers[outcome] = make(map[string]bool)
-		}
-
-		outcomeUsers[outcome][user] = true
-		totalUniqueUsers[user] = true
-	}
-
-	totalUsers := len(totalUniqueUsers)
-	if totalUsers == 0 {
-		// No positions found, fall back to price-based stats
-		return c.computeStatsFromPrices(market), nil
-	}
-
-	stats := &MarketStats{
-		MarketID:   market.ID,
-		Question:   market.Question,
-		TotalUsers: totalUsers,
-	}
-
-	var maxPct float64
-	var popularOutcome string
-
-	// Calculate stats for each outcome
-	for i, outcomeName := range market.Outcomes {
-		outcomeKey := fmt.Sprint(i) // Outcomes are typically indexed 0, 1, etc.
-		users, exists := outcomeUsers[outcomeKey]
-		
-		userCount := 0
-		if exists {
-			userCount = len(users)
-		}
-		
-		pct := 0.0
-		if totalUsers > 0 {
-			pct = float64(userCount) / float64(totalUsers) * 100
-		}
-
-		price := ""
-		if i < len(market.OutcomeTokens) {
-			price = market.OutcomeTokens[i]
-		}
-
-		stats.OutcomeStats = append(stats.OutcomeStats, OutcomeStats{
-			Outcome:      outcomeName,
-			OutcomeIndex: i,
-			UserCount:    userCount,
-			Percentage:   pct,
-			Price:        price,
-		})
-
-		if pct > maxPct {
-			maxPct = pct
-			popularOutcome = outcomeName
-		}
-	}
-
-	stats.PopularOutcome = popularOutcome
-	stats.PopularPct = maxPct
-
-	return stats, nil
+	// Directly use price-based stats as the primary source of truth
+	return c.computeStatsFromPrices(market), nil
 }
 
-// computeStatsFromPrices creates stats based on market prices when positions aren't available
+// computeStatsFromPrices creates stats based on market prices
 func (c *SubgraphClient) computeStatsFromPrices(market *Market) *MarketStats {
 	stats := &MarketStats{
 		MarketID:   market.ID,
 		Question:   market.Question,
-		TotalUsers: 0, // Unknown when using price fallback
+		TotalUsers: 0, // Not available via public API
 	}
 
-	var maxPrice float64
+	var maxPct float64
 	var popularOutcome string
 
 	for i, outcomeName := range market.Outcomes {
@@ -265,19 +191,19 @@ func (c *SubgraphClient) computeStatsFromPrices(market *Market) *MarketStats {
 		stats.OutcomeStats = append(stats.OutcomeStats, OutcomeStats{
 			Outcome:      outcomeName,
 			OutcomeIndex: i,
-			UserCount:    0, // Unknown
+			UserCount:    0, // Not available
 			Percentage:   pct,
 			Price:        price,
 		})
 
-		if priceFloat > maxPrice {
-			maxPrice = priceFloat
+		if pct > maxPct {
+			maxPct = pct
 			popularOutcome = outcomeName
 		}
 	}
 
 	stats.PopularOutcome = popularOutcome
-	stats.PopularPct = maxPrice * 100
+	stats.PopularPct = maxPct
 
 	return stats
 }
