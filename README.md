@@ -18,22 +18,6 @@ A real-time Polymarket analysis application that identifies outcomes with high p
   - Polymarket Gamma API (market data)
   - The Graph Subgraph (position/betting data)
 
-## Project Structure
-
-```
-Polyfetch/
-├── main.go          # HTTP server and API endpoints
-├── models.go        # Data structures
-├── gamma.go         # Gamma API client
-├── subgraph.go      # GraphQL subgraph client
-├── go.mod           # Go dependencies
-└── frontend/        # React application
-    ├── src/
-    │   ├── App.jsx      # Main component
-    │   ├── App.css      # Component styles
-    │   └── index.css    # Global styles
-    └── package.json
-```
 
 ## Getting Started
 
@@ -77,34 +61,6 @@ The frontend will start on `http://localhost:5173`
 
 ## Example Response
 
-```json
-{
-  "success": true,
-  "data": {
-    "marketId": "12345",
-    "question": "Will X happen?",
-    "totalUsers": 1500,
-    "outcomeStats": [
-      {
-        "outcome": "Yes",
-        "outcomeIndex": 0,
-        "userCount": 1050,
-        "percentage": 70.0,
-        "price": "0.72"
-      },
-      {
-        "outcome": "No",
-        "outcomeIndex": 1,
-        "userCount": 450,
-        "percentage": 30.0,
-        "price": "0.28"
-      }
-    ],
-    "popularOutcome": "Yes",
-    "popularPct": 70.0
-  }
-}
-```
 
 ## Notes
 
