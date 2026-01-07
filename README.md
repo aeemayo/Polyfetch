@@ -49,15 +49,6 @@ npm run dev
 
 The frontend will start on `http://localhost:5173`
 
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Health check |
-| `/api/markets` | GET | List active markets (params: `limit`, `offset`) |
-| `/api/markets/search` | GET | Search markets (params: `q`, `limit`) |
-| `/api/market/{id}` | GET | Get market details |
-| `/api/market/{id}/stats` | GET | Get betting statistics for a market |
 
 ## Example Response
 
